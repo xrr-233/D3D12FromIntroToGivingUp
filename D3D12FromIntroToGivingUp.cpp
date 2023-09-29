@@ -2,7 +2,7 @@
 //
 
 #include "framework.h"
-#include "Direct3D12FromIntroToGivingUp.h"
+#include "D3D12FromIntroToGivingUp.h"
 
 #define MAX_LOADSTRING 100
 
@@ -25,20 +25,20 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
 
-    // TODO: 在此处放置代码。
-
     // 初始化全局字符串
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
-    LoadStringW(hInstance, IDC_DIRECT3D12FROMINTROTOGIVINGUP, szWindowClass, MAX_LOADSTRING);
+    LoadStringW(hInstance, IDC_D3D12FROMINTROTOGIVINGUP, szWindowClass, MAX_LOADSTRING);
+
+    // Step 1: 通过填充WNDCLASS的实例创建一个窗口类，然后使用RegisterClass注册它
     MyRegisterClass(hInstance);
 
     // 执行应用程序初始化:
-    if (!InitInstance (hInstance, nCmdShow))
+    if (!InitInstance(hInstance, nCmdShow))
     {
         return FALSE;
     }
 
-    HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_DIRECT3D12FROMINTROTOGIVINGUP));
+    HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_D3D12FROMINTROTOGIVINGUP));
 
     MSG msg;
 
@@ -53,12 +53,28 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     }
 
     return (int) msg.wParam;
+
+    /*
+    // TODO: 在此处放置代码。
+#if defined(DEBUG) | defined(_DEBUG)
+    _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+#endif
+
+    try
+    {
+        D3D12HelloTriangle theApp();
+    }
+    catch (const std::exception&)
+    {
+
+    }
+    */
 }
 
 
 
 //
-//  函数: MyRegisterClass()
+//  函数: RegisterClass()
 //
 //  目标: 注册窗口类。
 //
@@ -73,10 +89,10 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
     wcex.cbClsExtra     = 0;
     wcex.cbWndExtra     = 0;
     wcex.hInstance      = hInstance;
-    wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_DIRECT3D12FROMINTROTOGIVINGUP));
+    wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_D3D12FROMINTROTOGIVINGUP));
     wcex.hCursor        = LoadCursor(nullptr, IDC_ARROW);
     wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+1);
-    wcex.lpszMenuName   = MAKEINTRESOURCEW(IDC_DIRECT3D12FROMINTROTOGIVINGUP);
+    wcex.lpszMenuName   = MAKEINTRESOURCEW(IDC_D3D12FROMINTROTOGIVINGUP);
     wcex.lpszClassName  = szWindowClass;
     wcex.hIconSm        = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
 

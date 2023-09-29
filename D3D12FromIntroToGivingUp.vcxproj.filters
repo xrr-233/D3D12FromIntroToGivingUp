@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="着色器">
+      <UniqueIdentifier>{72772e61-09ce-41cc-95fa-ce9e9d3a732f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -24,10 +27,10 @@
     <ClInclude Include="Resource.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Direct3D12FromIntroToGivingUp.h">
+    <ClInclude Include="D3D12FromIntroToGivingUp.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="D3D12HelloTriangle.h">
+    <ClInclude Include="D3D12App.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="pch.h">
@@ -38,10 +41,10 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Direct3D12FromIntroToGivingUp.cpp">
+    <ClCompile Include="D3D12FromIntroToGivingUp.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="D3D12HelloTriangle.cpp">
+    <ClCompile Include="D3D12App.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="DXHelper.cpp">
@@ -49,7 +52,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="Direct3D12FromIntroToGivingUp.rc">
+    <ResourceCompile Include="D3D12FromIntroToGivingUp.rc">
       <Filter>资源文件</Filter>
     </ResourceCompile>
   </ItemGroup>
@@ -57,7 +60,7 @@
     <Image Include="small.ico">
       <Filter>资源文件</Filter>
     </Image>
-    <Image Include="Direct3D12FromIntroToGivingUp.ico">
+    <Image Include="D3D12FromIntroToGivingUp.ico">
       <Filter>资源文件</Filter>
     </Image>
   </ItemGroup>
@@ -65,5 +68,10 @@
     <None Include="vcpkg.json" />
     <None Include="README.md" />
     <None Include=".gitignore" />
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="shaders.hlsl">
+      <Filter>着色器</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>
