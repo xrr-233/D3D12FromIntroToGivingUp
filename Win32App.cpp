@@ -1,9 +1,9 @@
-﻿#include "Win32Application.h"
+﻿#include "Win32App.h"
 #include "framework.h"
 
-Win32Application* Win32Application::instance = nullptr;
+Win32App* Win32App::instance = nullptr;
 
-Win32Application::Win32Application(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow) {
+Win32App::Win32App(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow) {
     this->hInstance = hInstance;
     this->hPrevInstance = hPrevInstance;
     this->lpCmdLine = lpCmdLine;
@@ -12,18 +12,20 @@ Win32Application::Win32Application(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     m_hwnd = nullptr;
 }
 
-Win32Application* Win32Application::GetInstance(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow) {
-    instance = new Win32Application(hInstance, hPrevInstance, lpCmdLine, nCmdShow);
+Win32App* Win32App::GetInstance(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow) {
+    instance = new Win32App(hInstance, hPrevInstance, lpCmdLine, nCmdShow);
     return instance;
 }
 
-Win32Application* Win32Application::GetInstance() {
+Win32App* Win32App::GetInstance() {
     if (instance == nullptr)
         return FALSE;
     return instance;
 }
 
-int Win32Application::Run(D3D12App* app) {
+int Win32App::Run(D3D12App* app) {
+    this->app = app;
+
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
 
@@ -35,8 +37,16 @@ int Win32Application::Run(D3D12App* app) {
     MyRegisterClass();
 
     // 执行应用程序初始化:
-    if (!InitInstance())
+    HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
+        CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
+
+    if (!hWnd)
         return FALSE;
+
+    this->app->OnInit(hWnd);
+
+    ShowWindow(hWnd, nCmdShow);
+    UpdateWindow(hWnd);
 
     HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_D3D12FROMINTROTOGIVINGUP));
 
@@ -52,6 +62,8 @@ int Win32Application::Run(D3D12App* app) {
         }
     }
 
+    this->app->OnDestroy();
+
     return (int)msg.wParam;
 }
 
@@ -60,7 +72,7 @@ int Win32Application::Run(D3D12App* app) {
 //
 //  目标: 注册窗口类。
 //
-ATOM Win32Application::MyRegisterClass()
+ATOM Win32App::MyRegisterClass()
 {
     WNDCLASSEXW wcex;
 
@@ -82,32 +94,6 @@ ATOM Win32Application::MyRegisterClass()
 }
 
 //
-//   函数: InitInstance(HINSTANCE, int)
-//
-//   目标: 保存实例句柄并创建主窗口
-//
-//   注释:
-//
-//        在此函数中，我们在全局变量中保存实例句柄并
-//        创建和显示主程序窗口。
-//
-BOOL Win32Application::InitInstance()
-{
-    HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
-        CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
-
-    if (!hWnd)
-    {
-        return FALSE;
-    }
-
-    ShowWindow(hWnd, nCmdShow);
-    UpdateWindow(hWnd);
-
-    return TRUE;
-}
-
-//
 //  函数: WndProc(HWND, UINT, WPARAM, LPARAM)
 //
 //  目标: 处理主窗口的消息。
@@ -117,7 +103,7 @@ BOOL Win32Application::InitInstance()
 //  WM_DESTROY  - 发送退出消息并返回
 //
 //
-LRESULT CALLBACK Win32Application::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK Win32App::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
     {
@@ -128,7 +114,7 @@ LRESULT CALLBACK Win32Application::WndProc(HWND hWnd, UINT message, WPARAM wPara
         switch (wmId)
         {
         case IDM_ABOUT:
-            DialogBox(Win32Application::GetInstance()->hInstance, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
+            DialogBox(Win32App::GetInstance()->hInstance, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
             break;
         case IDM_EXIT:
             DestroyWindow(hWnd);
@@ -143,6 +129,8 @@ LRESULT CALLBACK Win32Application::WndProc(HWND hWnd, UINT message, WPARAM wPara
         PAINTSTRUCT ps;
         HDC hdc = BeginPaint(hWnd, &ps);
         // TODO: 在此处添加使用 hdc 的任何绘图代码...
+        GetInstance()->app->OnUpdate();
+        GetInstance()->app->OnRender();
         EndPaint(hWnd, &ps);
     }
     break;
@@ -156,7 +144,7 @@ LRESULT CALLBACK Win32Application::WndProc(HWND hWnd, UINT message, WPARAM wPara
 }
 
 // “关于”框的消息处理程序。
-INT_PTR CALLBACK Win32Application::About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+INT_PTR CALLBACK Win32App::About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     UNREFERENCED_PARAMETER(lParam);
     switch (message)

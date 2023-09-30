@@ -8,10 +8,12 @@ D3D12App::D3D12App() {}
 D3D12App::D3D12App(UINT width, UINT height, std::wstring name) {
 	this->m_clientWidth = width;
 	this->m_clientHeight = height;
+
+	this->m_aspectRatio = static_cast<float>(width) / static_cast<float>(height);
 }
 
-void D3D12App::OnInit() {
-	LoadPipeline();
+void D3D12App::OnInit(HWND hWnd) {
+	LoadPipeline(hWnd);
 	LoadAssets();
 }
 
@@ -34,7 +36,7 @@ void D3D12App::OnDestroy() {
 }
 
 // https://learn.microsoft.com/en-us/windows/win32/direct3d12/creating-a-basic-direct3d-12-component
-void D3D12App::LoadPipeline() {
+void D3D12App::LoadPipeline(HWND hWnd) {
 	// Step 1: 启用调试层
 #if defined(DEBUG) || defined(_DEBUG)
 	ComPtr<ID3D12Debug> debugController;
@@ -81,7 +83,7 @@ void D3D12App::LoadPipeline() {
 
 	// Step 4: 创建交换链
 	D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS msQualityLevels; // 检测对4X MSAA质量级别的支持
-	// msQualityLevels.Format = m_backBufferFormat;
+	msQualityLevels.Format = m_backBufferFormat;
 	msQualityLevels.SampleCount = 4;
 	msQualityLevels.Flags = D3D12_MULTISAMPLE_QUALITY_LEVELS_FLAG_NONE;
 	msQualityLevels.NumQualityLevels = 0;
@@ -94,21 +96,21 @@ void D3D12App::LoadPipeline() {
 	assert(m_4xMsaaQuality > 0 && "Unexpected MSAA quality level.");
 
 	m_swapChain.Reset(); // 释放之前创建的交换链，随后重建
-	DXGI_SWAP_CHAIN_DESC swapChainDesc;
+	DXGI_SWAP_CHAIN_DESC swapChainDesc = {};
+	swapChainDesc.BufferCount = frameCount;
 	swapChainDesc.BufferDesc.Width = m_clientWidth;
 	swapChainDesc.BufferDesc.Height = m_clientHeight;
+	swapChainDesc.BufferDesc.Format = m_backBufferFormat;
 	swapChainDesc.BufferDesc.RefreshRate.Numerator = 60;
 	swapChainDesc.BufferDesc.RefreshRate.Denominator = 1;
-	// sd.BufferDesc.Format = m_backBufferFormat;
 	swapChainDesc.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
 	swapChainDesc.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
 	swapChainDesc.SampleDesc.Count = m_4xMsaaEnabled ? 4 : 1;
 	swapChainDesc.SampleDesc.Quality = m_4xMsaaEnabled ? (m_4xMsaaQuality - 1) : 0;
 	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-	swapChainDesc.BufferCount = frameCount;
-	// sd.OutputWindow = mhMainWind;
+	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+	swapChainDesc.OutputWindow = hWnd;
 	swapChainDesc.Windowed = TRUE;
-	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 	swapChainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 	ComPtr<IDXGISwapChain> swapChain;
 	ThrowIfFailed(factory->CreateSwapChain(
@@ -149,14 +151,14 @@ void D3D12App::LoadPipeline() {
 	depthStencilDesc.Height = m_clientHeight;
 	depthStencilDesc.DepthOrArraySize = 1;
 	depthStencilDesc.MipLevels = 1;
-	//depthStencilDesc.Format = m_depthStencilFormat;
+	depthStencilDesc.Format = m_depthStencilFormat;
 	depthStencilDesc.SampleDesc.Count = m_4xMsaaEnabled ? 4 : 1;
 	depthStencilDesc.SampleDesc.Quality = m_4xMsaaEnabled ? (m_4xMsaaQuality - 1) : 0;
 	depthStencilDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
 	depthStencilDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 
 	D3D12_CLEAR_VALUE optClear;
-	// optClear.Format = 
+	optClear.Format = m_depthStencilFormat;
 	optClear.DepthStencil.Depth = 1.0f;
 	optClear.DepthStencil.Stencil = 0;
 	CD3DX12_HEAP_PROPERTIES pHeapProperties(D3D12_HEAP_TYPE_DEFAULT);
@@ -170,7 +172,7 @@ void D3D12App::LoadPipeline() {
 	));
 
 	// 利用此资源的格式，为整个资源的第0 mip层创建描述符
-	//m_device->CreateDepthStencilView(m_depthStencil.Get(), nullptr, depthstencilview);
+	m_device->CreateDepthStencilView(m_depthStencil.Get(), nullptr, m_dsvHeap->GetCPUDescriptorHandleForHeapStart());
 	// 将资源从初始状态转换为深度缓冲区
 	CD3DX12_RESOURCE_BARRIER pBarrier = CD3DX12_RESOURCE_BARRIER::Transition(
 		m_depthStencil.Get(),
@@ -220,14 +222,14 @@ void D3D12App::LoadAssets() {
 	psoDesc.SampleMask = UINT_MAX;
 	psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 	psoDesc.NumRenderTargets = 1;
-	// psoDesc.RTVFormats[0] = m_backBufferFormat;
+	psoDesc.RTVFormats[0] = m_backBufferFormat;
 	psoDesc.SampleDesc.Count = m_4xMsaaEnabled ? 4 : 1;
 	psoDesc.SampleDesc.Quality = m_4xMsaaEnabled ? (m_4xMsaaQuality - 1) : 0;
-	// psoDesc.DSVFormat[0] = m_depthStencilFormat;
+	psoDesc.DSVFormat = m_depthStencilFormat;
 	ThrowIfFailed(m_device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&m_pipelineState)));
 
 	// 创建然后关闭命令列表
-	ThrowIfFailed(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_commandAllocator)));
+	ThrowIfFailed(m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_commandAllocator.Get(), m_pipelineState.Get(), IID_PPV_ARGS(&m_commandList)));
 	ThrowIfFailed(m_commandList->Close());
 
 	// 创建顶点缓冲区

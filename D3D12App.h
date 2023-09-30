@@ -10,7 +10,7 @@ public:
 	D3D12App();
 	D3D12App(UINT width, UINT height, std::wstring name);
 
-	void OnInit();
+	void OnInit(HWND);
 	void OnUpdate();
 	void OnRender();
 	void OnDestroy();
@@ -18,13 +18,15 @@ public:
 protected:
 	UINT m_clientWidth;
 	UINT m_clientHeight;
+	float m_aspectRatio;
 
 private:
 	// 全局设置
 	static const int frameCount = 2;
-	float m_aspectRatio;
-	bool m_4xMsaaEnabled = true;
+	bool m_4xMsaaEnabled = FALSE;
 	UINT m_4xMsaaQuality = 1;
+	DXGI_FORMAT m_backBufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+	DXGI_FORMAT m_depthStencilFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 
 	struct Vertex {
 		XMFLOAT3 position;
@@ -58,7 +60,7 @@ private:
 	HANDLE m_fenceEvent;
 	UINT64 m_fenceValue;
 
-	void LoadPipeline();
+	void LoadPipeline(HWND);
 	void LoadAssets();
 	void PopulateCommandList();
 	void WaitForPreviousFrame();

@@ -2,7 +2,7 @@
 
 #include "resource.h"
 #include "D3D12App.h"
-#include "Win32Application.h"
+#include "Win32App.h"
 
 class D3D12FromIntroToGivingUp : public D3D12App {
 public:
