@@ -139,11 +139,13 @@
     <ClInclude Include="Resource.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="targetver.h" />
+    <ClInclude Include="Win32Application.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="D3D12App.cpp" />
     <ClCompile Include="D3D12FromIntroToGivingUp.cpp" />
     <ClCompile Include="DXHelper.cpp" />
+    <ClCompile Include="Win32Application.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="D3D12FromIntroToGivingUp.rc" />

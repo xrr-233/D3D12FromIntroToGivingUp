@@ -2,13 +2,9 @@
 
 #include "resource.h"
 #include "D3D12App.h"
+#include "Win32Application.h"
 
-class D3D12FromIntroToGivingUp : D3D12App {
+class D3D12FromIntroToGivingUp : public D3D12App {
 public:
-    D3D12FromIntroToGivingUp(HINSTANCE hInstance);
-    ~D3D12FromIntroToGivingUp();
-    
-private:
-    UINT m_clientWidth = 640;
-    UINT m_clientHeight = 480;
+    D3D12FromIntroToGivingUp(UINT width, UINT height, std::wstring name);
 };

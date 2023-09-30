@@ -3,6 +3,13 @@
 
 using namespace DX;
 
+D3D12App::D3D12App() {}
+
+D3D12App::D3D12App(UINT width, UINT height, std::wstring name) {
+	this->m_clientWidth = width;
+	this->m_clientHeight = height;
+}
+
 void D3D12App::OnInit() {
 	LoadPipeline();
 	LoadAssets();

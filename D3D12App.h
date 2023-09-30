@@ -1,23 +1,27 @@
-﻿#include "pch.h"
+﻿#pragma once
+
+#include "pch.h"
 
 using namespace DirectX;
 using namespace Microsoft::WRL;
 
 class D3D12App {
 public:
+	D3D12App();
 	D3D12App(UINT width, UINT height, std::wstring name);
-	~D3D12App();
 
 	void OnInit();
 	void OnUpdate();
 	void OnRender();
 	void OnDestroy();
 
+protected:
+	UINT m_clientWidth;
+	UINT m_clientHeight;
+
 private:
 	// 全局设置
 	static const int frameCount = 2;
-	UINT m_clientWidth;
-	UINT m_clientHeight;
 	float m_aspectRatio;
 	bool m_4xMsaaEnabled = true;
 	UINT m_4xMsaaQuality = 1;
