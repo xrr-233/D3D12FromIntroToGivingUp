@@ -5,6 +5,8 @@
 
 #define MAX_LOADSTRING 100
 
+class D3D12App;
+
 class Win32App {
 public:
 	static Win32App* GetInstance(HINSTANCE, HINSTANCE, LPWSTR, int);
@@ -12,7 +14,7 @@ public:
 
 	D3D12App* app;
 	int Run(D3D12App*);
-	HWND GetHwnd() { return m_hwnd; }
+	static HWND GetHwnd() { return instance->m_hwnd; }
 
 private:
 	Win32App(HINSTANCE, HINSTANCE, LPWSTR, int);

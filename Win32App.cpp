@@ -1,5 +1,5 @@
-﻿#include "Win32App.h"
-#include "framework.h"
+﻿#include "framework.h"
+#include "Win32App.h"
 
 Win32App* Win32App::instance = nullptr;
 
@@ -42,8 +42,9 @@ int Win32App::Run(D3D12App* app) {
 
     if (!hWnd)
         return FALSE;
+    m_hwnd = hWnd;
 
-    this->app->OnInit(hWnd);
+    this->app->OnInit();
 
     ShowWindow(hWnd, nCmdShow);
     UpdateWindow(hWnd);

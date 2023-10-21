@@ -1,16 +1,16 @@
 ﻿#pragma once
 
 #include "pch.h"
+#include "Win32App.h"
 
 using namespace DirectX;
 using namespace Microsoft::WRL;
 
 class D3D12App {
 public:
-	D3D12App();
 	D3D12App(UINT width, UINT height, std::wstring name);
 
-	void OnInit(HWND);
+	void OnInit();
 	void OnUpdate();
 	void OnRender();
 	void OnDestroy();
@@ -60,7 +60,7 @@ private:
 	HANDLE m_fenceEvent;
 	UINT64 m_fenceValue;
 
-	void LoadPipeline(HWND);
+	void LoadPipeline();
 	void LoadAssets();
 	void PopulateCommandList();
 	void WaitForPreviousFrame();

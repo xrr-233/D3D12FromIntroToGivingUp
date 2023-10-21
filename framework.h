@@ -14,3 +14,7 @@
 #include <memory.h>
 #include <tchar.h>
 #include <crtdbg.h>
+
+#include <iostream>
+#include <comdef.h>
+#include <locale.h>

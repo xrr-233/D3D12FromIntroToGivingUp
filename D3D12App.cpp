@@ -3,17 +3,26 @@
 
 using namespace DX;
 
-D3D12App::D3D12App() {}
-
 D3D12App::D3D12App(UINT width, UINT height, std::wstring name) {
-	this->m_clientWidth = width;
-	this->m_clientHeight = height;
+	m_clientWidth = width;
+	m_clientHeight = height;
 
-	this->m_aspectRatio = static_cast<float>(width) / static_cast<float>(height);
+	m_aspectRatio = static_cast<float>(width) / static_cast<float>(height);
+
+	m_frameIndex = 0;
+	m_viewport.TopLeftX = 0.0f;
+	m_viewport.TopLeftY = 0.0f;
+	m_viewport.Width = static_cast<float>(width);
+	m_viewport.Height = static_cast<float>(height);
+	m_scissorRect.left = 0;
+	m_scissorRect.top = 0;
+	m_scissorRect.right = static_cast<LONG>(width);
+	m_scissorRect.bottom = static_cast<LONG>(height);
+	m_rtvDescriptorSize = 0;
 }
 
-void D3D12App::OnInit(HWND hWnd) {
-	LoadPipeline(hWnd);
+void D3D12App::OnInit() {
+	LoadPipeline();
 	LoadAssets();
 }
 
@@ -36,7 +45,7 @@ void D3D12App::OnDestroy() {
 }
 
 // https://learn.microsoft.com/en-us/windows/win32/direct3d12/creating-a-basic-direct3d-12-component
-void D3D12App::LoadPipeline(HWND hWnd) {
+void D3D12App::LoadPipeline() {
 	// Step 1: 启用调试层
 #if defined(DEBUG) || defined(_DEBUG)
 	ComPtr<ID3D12Debug> debugController;
@@ -46,7 +55,7 @@ void D3D12App::LoadPipeline(HWND hWnd) {
 
 	// Step 2: 创建设备
 	ComPtr<IDXGIFactory4> factory;
-	ThrowIfFailed(CreateDXGIFactory1(IID_PPV_ARGS(&factory)));
+	ThrowIfFailed(CreateDXGIFactory2(DXGI_CREATE_FACTORY_DEBUG, IID_PPV_ARGS(&factory)));
 
 	HRESULT hardwareResult = D3D12CreateDevice(
 		nullptr, // 默认适配器
@@ -71,15 +80,6 @@ void D3D12App::LoadPipeline(HWND hWnd) {
 	queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
 	queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
 	ThrowIfFailed(m_device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&m_commandQueue)));
-	ThrowIfFailed(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_commandAllocator)));
-	ThrowIfFailed(m_device->CreateCommandList(
-		0,
-		D3D12_COMMAND_LIST_TYPE_DIRECT,
-		m_commandAllocator.Get(), // 关联命令分配器
-		nullptr, // 初始化流水线状态对象
-		IID_PPV_ARGS(m_commandList.GetAddressOf())
-	));
-	m_commandList->Close(); // 在第一次引用命令列表时，要对其重置，而调用重置前需关闭
 
 	// Step 4: 创建交换链
 	D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS msQualityLevels; // 检测对4X MSAA质量级别的支持
@@ -109,7 +109,7 @@ void D3D12App::LoadPipeline(HWND hWnd) {
 	swapChainDesc.SampleDesc.Quality = m_4xMsaaEnabled ? (m_4xMsaaQuality - 1) : 0;
 	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-	swapChainDesc.OutputWindow = hWnd;
+	swapChainDesc.OutputWindow = Win32App::GetHwnd();
 	swapChainDesc.Windowed = TRUE;
 	swapChainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 	ComPtr<IDXGISwapChain> swapChain;
@@ -128,12 +128,12 @@ void D3D12App::LoadPipeline(HWND hWnd) {
 	rtvHeapDesc.NodeMask = 0;
 	ThrowIfFailed(m_device->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&m_rtvHeap)));
 
-	D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc;
+	/*D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc;
 	dsvHeapDesc.NumDescriptors = 1;
 	dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
 	dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 	dsvHeapDesc.NodeMask = 0;
-	ThrowIfFailed(m_device->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&m_dsvHeap)));
+	ThrowIfFailed(m_device->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&m_dsvHeap)));*/
 	m_rtvDescriptorSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 
 	// Step 6: 创建帧资源
@@ -144,7 +144,7 @@ void D3D12App::LoadPipeline(HWND hWnd) {
 		rtvHeapHandle.Offset(1, m_rtvDescriptorSize);
 	}
 
-	D3D12_RESOURCE_DESC depthStencilDesc;
+	/*D3D12_RESOURCE_DESC depthStencilDesc;
 	depthStencilDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 	depthStencilDesc.Alignment = 0;
 	depthStencilDesc.Width = m_clientWidth;
@@ -179,7 +179,9 @@ void D3D12App::LoadPipeline(HWND hWnd) {
 		D3D12_RESOURCE_STATE_COMMON,
 		D3D12_RESOURCE_STATE_DEPTH_WRITE
 	);
-	m_commandList->ResourceBarrier(1, &pBarrier);
+	m_commandList->ResourceBarrier(1, &pBarrier);*/
+
+	ThrowIfFailed(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_commandAllocator)));
 }
 
 void D3D12App::LoadAssets() {
@@ -218,7 +220,9 @@ void D3D12App::LoadAssets() {
 	psoDesc.PS = { reinterpret_cast<UINT8*>(pixelShader->GetBufferPointer()), pixelShader->GetBufferSize() };
 	psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
 	psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-	psoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+	// psoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+	psoDesc.DepthStencilState.DepthEnable = FALSE;
+	psoDesc.DepthStencilState.StencilEnable = FALSE;
 	psoDesc.SampleMask = UINT_MAX;
 	psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 	psoDesc.NumRenderTargets = 1;
@@ -229,7 +233,13 @@ void D3D12App::LoadAssets() {
 	ThrowIfFailed(m_device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&m_pipelineState)));
 
 	// 创建然后关闭命令列表
-	ThrowIfFailed(m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_commandAllocator.Get(), m_pipelineState.Get(), IID_PPV_ARGS(&m_commandList)));
+	ThrowIfFailed(m_device->CreateCommandList(
+		0,
+		D3D12_COMMAND_LIST_TYPE_DIRECT,
+		m_commandAllocator.Get(),
+		m_pipelineState.Get(),
+		IID_PPV_ARGS(&m_commandList)
+	));
 	ThrowIfFailed(m_commandList->Close());
 
 	// 创建顶点缓冲区

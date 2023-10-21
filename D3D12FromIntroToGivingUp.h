@@ -1,6 +1,7 @@
 #pragma once
 
 #include "resource.h"
+#include "framework.h"
 #include "D3D12App.h"
 #include "Win32App.h"
 
