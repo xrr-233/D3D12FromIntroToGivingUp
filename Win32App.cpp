@@ -30,14 +30,13 @@ int Win32App::Run(D3D12App* app) {
     UNREFERENCED_PARAMETER(lpCmdLine);
 
     // 初始化全局字符串
-    LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
     LoadStringW(hInstance, IDC_D3D12FROMINTROTOGIVINGUP, szWindowClass, MAX_LOADSTRING);
 
     // 通过填充WNDCLASS的实例创建一个窗口类，然后使用RegisterClass注册它
     MyRegisterClass();
 
     // 执行应用程序初始化:
-    HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
+    HWND hWnd = CreateWindowW(szWindowClass, app->GetTitle(), WS_OVERLAPPEDWINDOW,
         CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
 
     if (!hWnd)
@@ -46,8 +45,7 @@ int Win32App::Run(D3D12App* app) {
 
     this->app->OnInit();
 
-    ShowWindow(hWnd, nCmdShow);
-    UpdateWindow(hWnd);
+    MyShowWindow();
 
     HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_D3D12FROMINTROTOGIVINGUP));
 
@@ -94,6 +92,25 @@ ATOM Win32App::MyRegisterClass()
     return RegisterClassExW(&wcex);
 }
 
+void Win32App::MyShowWindow() {
+    LPRECT winRect = new RECT, clntRect = new RECT;
+    GetWindowRect(Win32App::GetHwnd(), winRect);
+    GetClientRect(Win32App::GetHwnd(), clntRect);
+    LPPOINT tl = new POINT, br = new POINT;
+    tl->x = clntRect->left;
+    tl->y = clntRect->top;
+    br->x = clntRect->right;
+    br->y = clntRect->bottom;
+    ClientToScreen(Win32App::GetHwnd(), tl);
+    ClientToScreen(Win32App::GetHwnd(), br);
+    SetWindowPos(Win32App::GetHwnd(), HWND_TOP, 0, 0,
+        tl->x - winRect->left + app->GetWidth() + winRect->right - br->x,
+        tl->y - winRect->top + app->GetHeight() + winRect->bottom - br->y,
+        SWP_NOMOVE);
+    ShowWindow(Win32App::GetHwnd(), nCmdShow);
+    UpdateWindow(Win32App::GetHwnd());
+}
+
 //
 //  函数: WndProc(HWND, UINT, WPARAM, LPARAM)
 //
@@ -127,12 +144,11 @@ LRESULT CALLBACK Win32App::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
     break;
     case WM_PAINT:
     {
-        PAINTSTRUCT ps;
-        HDC hdc = BeginPaint(hWnd, &ps);
-        // TODO: 在此处添加使用 hdc 的任何绘图代码...
+        // PAINTSTRUCT ps;
+        // HDC hdc = BeginPaint(hWnd, &ps);
+        // EndPaint(hWnd, &ps);
         GetInstance()->app->OnUpdate();
         GetInstance()->app->OnRender();
-        EndPaint(hWnd, &ps);
     }
     break;
     case WM_DESTROY:
