@@ -134,7 +134,7 @@
   <ItemGroup>
     <ClInclude Include="D3D12App.h" />
     <ClInclude Include="D3D12FromIntroToGivingUp.h" />
-    <ClInclude Include="DXHelper.h" />
+    <ClInclude Include="D3D12Utils.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="pch.h" />
@@ -144,7 +144,8 @@
   <ItemGroup>
     <ClCompile Include="D3D12App.cpp" />
     <ClCompile Include="D3D12FromIntroToGivingUp.cpp" />
-    <ClCompile Include="DXHelper.cpp" />
+    <ClCompile Include="D3D12MathHelper.h" />
+    <ClCompile Include="D3D12Utils.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Win32App.cpp" />
   </ItemGroup>

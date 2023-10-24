@@ -151,6 +151,12 @@ LRESULT CALLBACK Win32App::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
         GetInstance()->app->OnRender();
     }
     break;
+    case WM_SIZE:
+        // Save the new client area dimensions.
+        GetInstance()->app->SetWidth(LOWORD(lParam));
+        GetInstance()->app->SetHeight(HIWORD(lParam));
+        GetInstance()->app->OnResize();
+        break;
     case WM_DESTROY:
         PostQuitMessage(0);
         break;
