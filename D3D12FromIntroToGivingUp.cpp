@@ -261,8 +261,8 @@ void D3D12FromIntroToGivingUp::LoadAssets() {
 	m_commandList->SetName(L"m_commandList");
 	ThrowIfFailed(m_commandList->Close());
 
+	// 创建顶点/索引缓冲区
 	{
-		// 创建顶点缓冲区
 		Vertex vertices[] = {
 			{ XMFLOAT3(-0.25f, +0.25f * m_aspectRatio, 0.0f), XMFLOAT4(Colors::Red) },
 			{ XMFLOAT3(+0.25f, -0.25f * m_aspectRatio, 0.0f), XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f) },
@@ -280,41 +280,88 @@ void D3D12FromIntroToGivingUp::LoadAssets() {
 		geometry->indexBufferSize = sizeof(indices);
 		geometry->vertexStride = sizeof(Vertex);
 
-		ThrowIfFailed(D3DCreateBlob(geometry->vertexBufferSize, &geometry->vertexBufferCPU));
+		/*ThrowIfFailed(D3DCreateBlob(geometry->vertexBufferSize, &geometry->vertexBufferCPU));
 		CopyMemory(geometry->vertexBufferCPU->GetBufferPointer(), vertices, geometry->vertexBufferSize);
 		ThrowIfFailed(D3DCreateBlob(geometry->indexBufferSize, &geometry->indexBufferCPU));
 		CopyMemory(geometry->indexBufferCPU->GetBufferPointer(), indices, geometry->indexBufferSize);
 		geometry->vertexBufferGPU = D3D12Utils::CreateDefaultBuffer(m_device.Get(),
 			m_commandList.Get(), vertices, geometry->vertexBufferSize, geometry->vertexBufferUploader);
 		geometry->indexBufferGPU = D3D12Utils::CreateDefaultBuffer(m_device.Get(),
-			m_commandList.Get(), indices, geometry->indexBufferSize, geometry->indexBufferUploader);
+			m_commandList.Get(), indices, geometry->indexBufferSize, geometry->indexBufferUploader);*/
 
-		// 初始化顶点缓冲区视图
-		geometry->vertexBufferView.BufferLocation = geometry->vertexBufferGPU->GetGPUVirtualAddress();
-		geometry->vertexBufferView.StrideInBytes = sizeof(Vertex);
+		CD3DX12_HEAP_PROPERTIES hpUpload = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+		auto vertexResourceDesc = CD3DX12_RESOURCE_DESC::Buffer(geometry->vertexBufferSize);
+		ThrowIfFailed(m_device->CreateCommittedResource(
+			&hpUpload,
+			D3D12_HEAP_FLAG_NONE,
+			&vertexResourceDesc,
+			D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr,
+			IID_PPV_ARGS(&(geometry->vertexBuffer))));
+		// Copy the triangle data to the vertex buffer.
+		UINT8* pVertexDataBegin;
+		CD3DX12_RANGE readRange(0, 0); // We do not intend to read from this resource on the CPU.
+		ThrowIfFailed(geometry->vertexBuffer->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin)));
+		memcpy(pVertexDataBegin, vertices, sizeof(vertices));
+		geometry->vertexBuffer->Unmap(0, nullptr);
+
+		auto indexResourceDesc = CD3DX12_RESOURCE_DESC::Buffer(geometry->indexBufferSize);
+		ThrowIfFailed(m_device->CreateCommittedResource(
+			&hpUpload,
+			D3D12_HEAP_FLAG_NONE,
+			&indexResourceDesc,
+			D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr,
+			IID_PPV_ARGS(&(geometry->indexBuffer))));
+		// Copy the triangle data to the index buffer.
+		UINT8* pIndexDataBegin;
+		ThrowIfFailed(geometry->indexBuffer->Map(0, &readRange, reinterpret_cast<void**>(&pIndexDataBegin)));
+		memcpy(pIndexDataBegin, indices, sizeof(indices));
+		geometry->indexBuffer->Unmap(0, nullptr);
+
+		// 初始化顶点/索引缓冲区视图
+		geometry->vertexBufferView.BufferLocation = geometry->vertexBuffer->GetGPUVirtualAddress();
+		geometry->vertexBufferView.StrideInBytes = geometry->vertexStride;
 		geometry->vertexBufferView.SizeInBytes = geometry->vertexBufferSize;
-		geometry->indexBufferView.BufferLocation = geometry->indexBufferGPU->GetGPUVirtualAddress();
+		geometry->indexBufferView.BufferLocation = geometry->indexBuffer->GetGPUVirtualAddress();
 		geometry->indexBufferView.Format = geometry->indexFormat;
 		geometry->indexBufferView.SizeInBytes = geometry->indexBufferSize;
 
 		m_geometry.push_back(geometry);
+	}
 
-		m_objectCB = new UploadBuffer<ObjectConstants>(m_device.Get(), 1, true);
+	// 创建常量缓冲区
+	{
+		// m_objectCB = new UploadBuffer<SceneConstantBuffer>(m_device.Get(), 1, true);
 
-		UINT objCBByteSize = D3D12Utils::CalcConstantBufferByteSize(sizeof(ObjectConstants));
+		UINT constantBufferSize = D3D12Utils::CalcConstantBufferByteSize(sizeof(SceneConstantBuffer)); // CB size is required to be 256-byte aligned.
 
-		D3D12_GPU_VIRTUAL_ADDRESS cbAddress = m_objectCB->Resource()->GetGPUVirtualAddress();
-		// Offset to the ith object constant buffer in the buffer.
-		int boxCBufIndex = 0;
-		cbAddress += boxCBufIndex * objCBByteSize;
+		//D3D12_GPU_VIRTUAL_ADDRESS cbAddress = m_objectCB->Resource()->GetGPUVirtualAddress();
+		//// Offset to the ith object constant buffer in the buffer.
+		//int boxCBufIndex = 0;
+		//cbAddress += boxCBufIndex * objCBByteSize;
+
+		CD3DX12_HEAP_PROPERTIES hpUpload = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+		auto constantResourceDesc = CD3DX12_RESOURCE_DESC::Buffer(constantBufferSize);
+		ThrowIfFailed(m_device->CreateCommittedResource(
+			&hpUpload,
+			D3D12_HEAP_FLAG_NONE,
+			&constantResourceDesc,
+			D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr,
+			IID_PPV_ARGS(&m_constantBuffer)));
 
 		D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc;
-		cbvDesc.BufferLocation = cbAddress;
-		cbvDesc.SizeInBytes = D3D12Utils::CalcConstantBufferByteSize(sizeof(ObjectConstants));
-
+		cbvDesc.BufferLocation = m_constantBuffer->GetGPUVirtualAddress();
+		cbvDesc.SizeInBytes = constantBufferSize;
 		m_device->CreateConstantBufferView(
 			&cbvDesc,
 			m_cbvHeap->GetCPUDescriptorHandleForHeapStart());
+
+		// Map and initialize the constant buffer. We don't unmap this until the app closes. Keeping things mapped for the lifetime of the resource is okay.
+		CD3DX12_RANGE readRange(0, 0);
+		ThrowIfFailed(m_constantBuffer->Map(0, &readRange, reinterpret_cast<void**>(&m_pCbvDataBegin)));
+		memcpy(m_pCbvDataBegin, &m_constantBufferData, sizeof(m_constantBufferData));
 	}
 
 	// Create synchronization objects and wait until assets have been uploaded to the GPU.
@@ -334,11 +381,14 @@ void D3D12FromIntroToGivingUp::LoadAssets() {
 }
 
 void D3D12FromIntroToGivingUp::OnUpdate() {
+	const float rotateSpeed = 1;
+	m_constantBufferData.rotation += rotateSpeed;
+	// printf("%f\n", m_constantBufferData.rotation);
+	memcpy(m_pCbvDataBegin, &m_constantBufferData, sizeof(m_constantBufferData));
 }
 
 void D3D12FromIntroToGivingUp::OnRender() {
-    // 将渲染场景所需的所有命令记录到命令列表中
-    PopulateCommandList();
+    PopulateCommandList(); // 填充命令列表
 	ID3D12CommandList* ppCommandLists[] = { m_commandList.Get() };
 	m_commandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 	ThrowIfFailed(m_swapChain->Present(1, 0));
@@ -350,7 +400,7 @@ void D3D12FromIntroToGivingUp::OnDestroy() {
     CloseHandle(m_fenceEvent);
 }
 
-void D3D12FromIntroToGivingUp::OnResize() {
+/*void D3D12FromIntroToGivingUp::OnResize() {
 	// Flush before changing any resources
 	WaitForPreviousFrame();
 
@@ -368,12 +418,12 @@ void D3D12FromIntroToGivingUp::OnResize() {
 		m_aspectRatio = static_cast<float>(m_width) / static_cast<float>(m_height);
 
 	// 将资源从初始状态转换为深度缓冲区
-	/*CD3DX12_RESOURCE_BARRIER pBarrier = CD3DX12_RESOURCE_BARRIER::Transition(
+	CD3DX12_RESOURCE_BARRIER pBarrier = CD3DX12_RESOURCE_BARRIER::Transition(
 		m_depthStencil.Get(),
 		D3D12_RESOURCE_STATE_COMMON,
 		D3D12_RESOURCE_STATE_DEPTH_WRITE
 	);
-	m_commandList->ResourceBarrier(1, &pBarrier);*/
+	m_commandList->ResourceBarrier(1, &pBarrier);
 
 	ThrowIfFailed(m_commandList->Close());
 	ID3D12CommandList* ppCommandLists[] = { m_commandList.Get() };
@@ -388,41 +438,35 @@ void D3D12FromIntroToGivingUp::OnResize() {
 	m_viewport.MinDepth = 0.0f;
 	m_viewport.MaxDepth = 1.0f;
 	m_scissorRect = { 0, 0, static_cast<LONG>(m_width), static_cast<LONG>(m_height) };
-}
+}*/
 
 void D3D12FromIntroToGivingUp::PopulateCommandList() {
-	ThrowIfFailed(m_commandAllocator->Reset()); // 只有当相关的命令列表在GPU上完成执行时，才能重置命令列表分配器;应用程序应该使用围栏来确定GPU的执行进度
+	ThrowIfFailed(m_commandAllocator->Reset()); // 只有当相关的命令列表在GPU上完成执行时，才能重置分配器;应用程序应该使用围栏来确定GPU的执行进度
 	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), m_pipelineState.Get())); // 但是，当对特定命令列表调用ExecuteCommandList()时，该命令列表可以在任何时候重置，并且必须在重新记录之前重置
 
-	// 设置根签名、视口和剪刀矩形
 	m_commandList->SetGraphicsRootSignature(m_rootSignature.Get());
+	ID3D12DescriptorHeap* ppHeaps[] = { m_cbvHeap.Get() };
+	m_commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+	m_commandList->SetGraphicsRootDescriptorTable(0, m_cbvHeap->GetGPUDescriptorHandleForHeapStart());
 	m_commandList->RSSetViewports(1, &m_viewport);
 	m_commandList->RSSetScissorRects(1, &m_scissorRect);
 
-	// 指示后台缓冲区将用作渲染目标
+	// Indicate that the back buffer will be used as a render target.
 	auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargets[m_frameIndex].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
 	m_commandList->ResourceBarrier(1, &barrier);
 
-	// 记录一下命令
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_rtvHeap->GetCPUDescriptorHandleForHeapStart(), m_frameIndex, m_rtvDescriptorSize);
 	//D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle(m_dsvHeap->GetCPUDescriptorHandleForHeapStart());
+	//m_commandList->OMSetRenderTargets(1, &rtvHandle, TRUE, &dsvHandle);
+	m_commandList->OMSetRenderTargets(1, &rtvHandle, TRUE, nullptr);
 
 	const float clearColor[] = { 0.0f, 0.2f, 0.4f, 1.0f };
 	m_commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
 	//m_commandList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
-	//m_commandList->OMSetRenderTargets(1, &rtvHandle, TRUE, &dsvHandle);
-	m_commandList->OMSetRenderTargets(1, &rtvHandle, TRUE, nullptr);
-
-	ID3D12DescriptorHeap* descriptorHeaps[] = { m_cbvHeap.Get() };
-	m_commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-
 	m_commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	m_commandList->IASetVertexBuffers(0, 1, &m_geometry[0]->vertexBufferView);
 	m_commandList->IASetIndexBuffer(&m_geometry[0]->indexBufferView);
-
-	m_commandList->SetGraphicsRootDescriptorTable(0, m_cbvHeap->GetGPUDescriptorHandleForHeapStart());
-
-	m_commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
+	m_commandList->DrawIndexedInstanced(4, 1, 0, 0, 0);
 
 	// 指示后台缓冲区现在将用于呈现
 	barrier = CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargets[m_frameIndex].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);

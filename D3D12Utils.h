@@ -23,8 +23,8 @@ public:
 
     ComPtr<ID3DBlob> vertexBufferCPU;
     ComPtr<ID3DBlob> indexBufferCPU;
-    ComPtr<ID3D12Resource> vertexBufferGPU;
-    ComPtr<ID3D12Resource> indexBufferGPU;
+    ComPtr<ID3D12Resource> vertexBuffer;
+    ComPtr<ID3D12Resource> indexBuffer;
     ComPtr<ID3D12Resource> vertexBufferUploader;
     ComPtr<ID3D12Resource> indexBufferUploader;
 

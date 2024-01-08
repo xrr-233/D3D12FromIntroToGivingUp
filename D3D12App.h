@@ -16,7 +16,7 @@ public:
 	virtual void OnUpdate() = 0;
 	virtual void OnRender() = 0;
 	virtual void OnDestroy() = 0;
-	virtual void OnResize() = 0;
+	// virtual void OnResize() = 0;
 
 	// Accessors
 	UINT GetWidth() const { return m_width; }

@@ -14,7 +14,7 @@ public:
 	virtual void OnRender();
 	virtual void OnDestroy();
 
-	virtual void OnResize();
+	// virtual void OnResize();
 
 private:
 	struct Vertex {
@@ -22,9 +22,10 @@ private:
 		XMFLOAT4 color;
 	};
 
-	struct ObjectConstants
+	struct SceneConstantBuffer
 	{
 		XMFLOAT4X4 WorldViewProj = MathHelper::Identity4x4();
+		float rotation;
 	};
 
 	// 全局设置
@@ -50,8 +51,8 @@ private:
 
 	// 管线对象
 	ComPtr<ID3D12Resource>			m_renderTargets[frameCount];
-	ComPtr<ID3D12Resource>			m_depthStencil;
-	UploadBuffer<ObjectConstants>*	m_objectCB = nullptr;
+	// ComPtr<ID3D12Resource>			m_depthStencil;
+	// UploadBuffer<SceneConstantBuffer>*	m_objectCB = nullptr;
 
 	ComPtr<ID3D12RootSignature>		m_rootSignature;
 	ComPtr<ID3DBlob>				vertexShader;
@@ -60,6 +61,9 @@ private:
 
 	// 应用对象
 	std::vector<MeshGeometry*>		m_geometry;
+	ComPtr<ID3D12Resource> m_constantBuffer;
+	SceneConstantBuffer m_constantBufferData;
+	UINT8* m_pCbvDataBegin;
 
 	// 同步对象
 	UINT				m_frameIndex;
