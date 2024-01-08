@@ -7,7 +7,7 @@
 
 class D3D12FromIntroToGivingUp : public D3D12App {
 public:
-    D3D12FromIntroToGivingUp(UINT width, UINT height, std::wstring name);
+	D3D12FromIntroToGivingUp(UINT width, UINT height, std::wstring name);
 
 	virtual void OnInit();
 	virtual void OnUpdate();
@@ -32,7 +32,6 @@ private:
 	static const int frameCount = 2;
 	// bool m_4xMsaaEnabled = FALSE;
 	// UINT m_4xMsaaQuality = 0;
-	DXGI_FORMAT m_backBufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
 	// DXGI_FORMAT m_depthStencilFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 
 	ComPtr<IDXGIFactory4>			m_dxgiFactory;
@@ -42,8 +41,8 @@ private:
 	ComPtr<ID3D12GraphicsCommandList> m_commandList;
 	ComPtr<IDXGISwapChain3>			m_swapChain;
 	ComPtr<ID3D12DescriptorHeap>	m_rtvHeap, m_dsvHeap, m_cbvHeap;
-	D3D12_VIEWPORT	m_viewport;
-	D3D12_RECT		m_scissorRect;
+	CD3DX12_VIEWPORT	m_viewport;
+	CD3DX12_RECT		m_scissorRect;
 
 	UINT	m_rtvDescriptorSize;
 	UINT	m_dsvDescriptorSize;
