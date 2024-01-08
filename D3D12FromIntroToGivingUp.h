@@ -27,6 +27,27 @@ private:
 		XMFLOAT4X4 WorldViewProj = MathHelper::Identity4x4();
 	};
 
+	// 全局设置
+	static const int frameCount = 2;
+	// bool m_4xMsaaEnabled = FALSE;
+	// UINT m_4xMsaaQuality = 0;
+	DXGI_FORMAT m_backBufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+	// DXGI_FORMAT m_depthStencilFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
+
+	ComPtr<IDXGIFactory4>			m_dxgiFactory;
+	ComPtr<ID3D12Device>			m_device;
+	ComPtr<ID3D12CommandQueue>		m_commandQueue;
+	ComPtr<ID3D12CommandAllocator>	m_commandAllocator;
+	ComPtr<ID3D12GraphicsCommandList> m_commandList;
+	ComPtr<IDXGISwapChain3>			m_swapChain;
+	ComPtr<ID3D12DescriptorHeap>	m_rtvHeap, m_dsvHeap, m_cbvHeap;
+	D3D12_VIEWPORT	m_viewport;
+	D3D12_RECT		m_scissorRect;
+
+	UINT	m_rtvDescriptorSize;
+	UINT	m_dsvDescriptorSize;
+	UINT	m_cbvSrvUavDescriptorSize;
+
 	// 管线对象
 	ComPtr<ID3D12Resource>			m_renderTargets[frameCount];
 	ComPtr<ID3D12Resource>			m_depthStencil;
@@ -35,7 +56,6 @@ private:
 	ComPtr<ID3D12RootSignature>		m_rootSignature;
 	ComPtr<ID3DBlob>				vertexShader;
 	ComPtr<ID3DBlob>				pixelShader;
-	std::vector<D3D12_INPUT_ELEMENT_DESC> m_inputLayout;
 	ComPtr<ID3D12PipelineState>		m_pipelineState;
 
 	// 应用对象
@@ -52,12 +72,4 @@ private:
 	void LoadAssets();
 	void PopulateCommandList();
 	void WaitForPreviousFrame(); // FlushCommandQueue
-
-	// detailed steps
-	void BuildRootSignature();
-	void BuildShadersAndInputLayout();
-	void BuildGeometry();
-	void BuildPSO();
-
-	void BuildConstantBuffers();
 };
